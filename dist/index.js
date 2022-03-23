@@ -20384,12 +20384,11 @@ const getPrWorkspace = __nccwpck_require__( 6125 );
  */
 function getChangeloggerProjects() {
 	const projects = [];
-	const composerFiles = glob.sync( getPrWorkspace() + '/projects/*/*/composer.json' );
+	const composerFiles = glob.sync( getPrWorkspace() + '/{projects/*,plugins}/*/composer.json' );
 	composerFiles.forEach( file => {
 		const json = JSON.parse( fs.readFileSync( file ) );
 		if (
 			// include changelogger package and any other packages that use changelogger package.
-			file.endsWith( '/projects/packages/changelogger/composer.json' ) ||
 			json.require[ 'automattic/jetpack-changelogger' ] ||
 			json[ 'require-dev' ][ 'automattic/jetpack-changelogger' ]
 		) {
@@ -20408,11 +20407,18 @@ function getChangeloggerProjects() {
  */
 function getProject( file ) {
 	const project = file.match( /projects\/(?<ptype>[^/]*)\/(?<pname>[^/]*)\// );
+	const plugin = file.match( /plugins\/(?<pname>[^/]*)\// );
 	if ( project && project.groups.ptype && project.groups.pname ) {
 		return {
 			type: project.groups.ptype,
 			name: project.groups.pname,
 			fullName: `${ project.groups.ptype }/${ project.groups.pname }`,
+		};
+	} else if ( plugin && plugin.groups.pname ) {
+		return {
+			type: 'plugins',
+			name: plugin.groups.pname,
+			fullName: `plugins/${ plugin.groups.pname }`,
 		};
 	}
 	return {};
@@ -21536,7 +21542,7 @@ async function getStatusChecks( payload, octokit ) {
 	const hasLongDescription = body.length > 200;
 	const isClean = ! ( await hasUnverifiedCommit( octokit, ownerLogin, repo, number ) );
 	const isLabeled = await hasStatusLabels( octokit, ownerLogin, repo, number );
-	const hasTesting = body.includes( 'Testing instructions' );
+	const hasTesting = body.includes( 'How to test the changes in this Pull Request' );
 	const hasPrivacy = body.includes( 'data or activity we track or use' );
 	const projectsWithoutChangelog = await getChangelogEntries( octokit, ownerLogin, repo, number );
 	const isFromContributor = head.repo.full_name === base.repo.full_name;
@@ -21585,7 +21591,7 @@ function renderStatusChecks( statusChecks ) {
 	}*/
 
 	// Check for testing instructions.
-	checks += statusEntry( ! statusChecks.hasTesting, 'Add testing instructions.' );
+	//checks += statusEntry( ! statusChecks.hasTesting, 'Add testing instructions.' );
 
 	// Check if the Privacy section is filled in.
 	/*checks += statusEntry(
@@ -21616,13 +21622,13 @@ function renderRecommendations( statusChecks ) {
 	const recommendations = {
 		hasLongDescription:
 			'Please edit your PR description and explain what functional changes your PR includes, and why those changes are needed.',
-		hasTesting: `Please include detailed testing steps, explaining how to test your change, like so:
+/*		hasTesting: `Please include detailed testing steps, explaining how to test your change, like so:
 ~~~
 #### Testing instructions:
 
 * Go to '..'
 *
-~~~`,
+~~~`,*/
 		hasChangelogEntries: `Please add missing changelog entries for the following projects: \`${ statusChecks.projectsWithoutChangelog.join(
 			'`, `'
 		) }\`
