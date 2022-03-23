@@ -20384,7 +20384,8 @@ const getPrWorkspace = __nccwpck_require__( 6125 );
  */
 function getChangeloggerProjects() {
 	const projects = [];
-	const composerFiles = glob.sync( getPrWorkspace() + '/{projects/*,plugins}/*/composer.json' );
+	const composerFiles = glob.sync( getPrWorkspace() + '/plugins/*/composer.json' );
+
 	composerFiles.forEach( file => {
 		const json = JSON.parse( fs.readFileSync( file ) );
 		if (
@@ -20392,7 +20393,7 @@ function getChangeloggerProjects() {
 			json.require[ 'automattic/jetpack-changelogger' ] ||
 			json[ 'require-dev' ][ 'automattic/jetpack-changelogger' ]
 		) {
-			projects.push( getProject( file ).fullName );
+			projects.push( getProject( file ).name );
 		}
 	} );
 
@@ -20406,19 +20407,10 @@ function getChangeloggerProjects() {
  * @returns {object} Project type and name
  */
 function getProject( file ) {
-	const project = file.match( /projects\/(?<ptype>[^/]*)\/(?<pname>[^/]*)\// );
 	const plugin = file.match( /plugins\/(?<pname>[^/]*)\// );
-	if ( project && project.groups.ptype && project.groups.pname ) {
+	if ( plugin && plugin.groups.pname ) {
 		return {
-			type: project.groups.ptype,
-			name: project.groups.pname,
-			fullName: `${ project.groups.ptype }/${ project.groups.pname }`,
-		};
-	} else if ( plugin && plugin.groups.pname ) {
-		return {
-			type: 'plugins',
 			name: plugin.groups.pname,
-			fullName: `plugins/${ plugin.groups.pname }`,
 		};
 	}
 	return {};
@@ -20433,7 +20425,7 @@ function getProject( file ) {
 function getAffectedChangeloggerProjects( files ) {
 	const changeloggerProjects = getChangeloggerProjects();
 	const projects = files.reduce( ( acc, file ) => {
-		const project = getProject( file ).fullName;
+		const project = getProject( file ).name;
 		if ( ! file.endsWith( 'CHANGELOG.md' ) && changeloggerProjects.includes( project ) ) {
 			acc.add( project );
 		}
@@ -21498,21 +21490,21 @@ async function getChangelogEntries( octokit, owner, repo, number ) {
 	debug( `check-description: affected changelogger projects: ${ affectedProjects }` );
 
 	return affectedProjects.reduce( ( acc, project ) => {
-		const composerFile = `${ baseDir }/projects/${ project }/composer.json`;
+		const composerFile = `${ baseDir }/plugins/${ project }/composer.json`;
 		const json = JSON.parse( fs.readFileSync( composerFile ) );
 		// Changelog directory could customized via .extra.changelogger.changes-dir in composer.json. Lets check for it.
 		const changelogDir =
 			path.relative(
 				baseDir,
 				path.resolve(
-					`${ baseDir }/projects/${ project }`,
+					`${ baseDir }/plugins/${ project }`,
 					( json.extra && json.extra.changelogger && json.extra.changelogger[ 'changes-dir' ] ) ||
 						'changelog'
 				)
 			) + '/';
 		const found = files.find( file => file.startsWith( changelogDir ) );
 		if ( ! found ) {
-			acc.push( `projects/${ project }` );
+			acc.push( project );
 		}
 		return acc;
 	}, [] );
