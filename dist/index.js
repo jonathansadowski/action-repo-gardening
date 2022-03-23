@@ -21576,22 +21576,22 @@ function renderStatusChecks( statusChecks ) {
 
 	// Use labels please!
 	// Only check this for PRs created by a12s. External contributors cannot add labels.
-	if ( statusChecks.isFromContributor ) {
+	/*if ( statusChecks.isFromContributor ) {
 		debug( `check-description: this PR is correctly labeled: ${ statusChecks.isLabeled }` );
 		checks += statusEntry(
 			! statusChecks.isLabeled,
 			'Add a "[Status]" label (In Progress, Needs Team Review, ...).'
 		);
-	}
+	}*/
 
 	// Check for testing instructions.
 	checks += statusEntry( ! statusChecks.hasTesting, 'Add testing instructions.' );
 
 	// Check if the Privacy section is filled in.
-	checks += statusEntry(
+	/*checks += statusEntry(
 		! statusChecks.hasPrivacy,
 		'Specify whether this PR includes any changes to data or privacy.'
-	);
+	);*/
 
 	debug(
 		`check-description: Changelog entries missing for ${ statusChecks.projectsWithoutChangelog }`
@@ -21601,7 +21601,7 @@ function renderStatusChecks( statusChecks ) {
 		'Add changelog entries to affected projects'
 	);
 
-	debug( `check-description: privacy checked. Status checks so far is ${ checks }` );
+	debug( `check-description: status checked. Status checks so far is ${ checks }` );
 
 	return checks;
 }
@@ -21616,12 +21616,6 @@ function renderRecommendations( statusChecks ) {
 	const recommendations = {
 		hasLongDescription:
 			'Please edit your PR description and explain what functional changes your PR includes, and why those changes are needed.',
-		hasPrivacy: `We would recommend that you add a section to the PR description to specify whether this PR includes any changes to data or privacy, like so:
-~~~
-#### Does this pull request change what data or activity we track or use?
-
-My PR adds *x* and *y*.
-~~~`,
 		hasTesting: `Please include detailed testing steps, explaining how to test your change, like so:
 ~~~
 #### Testing instructions:
@@ -21633,8 +21627,7 @@ My PR adds *x* and *y*.
 			'`, `'
 		) }\`
 
-Use [the Jetpack CLI tool](https://github.com/Automattic/jetpack/blob/master/docs/monorepo.md#first-time) to generate changelog entries by running the following command: \`jetpack changelog add\`.
-Guidelines: [/docs/writing-a-good-changelog-entry.md](https://github.com/Automattic/jetpack/blob/master/docs/writing-a-good-changelog-entry.md)
+Add info on how to add a changelog entry here...
 `,
 	};
 
@@ -21753,7 +21746,7 @@ async function checkDescription( payload, octokit ) {
 	// We'll add any remarks we may have about the PR to that comment body.
 	let comment = `**Thank you for your PR!**
 
-When contributing to Jetpack, we have [a few suggestions](https://github.com/Automattic/jetpack/blob/master/.github/PULL_REQUEST_TEMPLATE.md) that can help us test and review your patch:<br>`;
+When contributing to WooCommerce, we have [a few suggestions](https://github.com/woocommerce/woocommerce/blob/trunk/.github/CONTRIBUTING.md) that can help us test and review your patch:<br>`;
 
 	comment += renderStatusChecks( statusChecks );
 	comment += `
@@ -21763,22 +21756,15 @@ This comment will be updated as you work on your PR and make changes. If you thi
 
 ******`;
 
-	comment += `
+	/*comment += `
 
 The e2e test report can be found [here](https://automattic.github.io/jetpack-e2e-reports/${ number }/report/). Please note that it can take a few minutes after the e2e tests checks are complete for the report to be available.
 
-******`;
+******`;*/
 
 	comment += renderRecommendations( statusChecks );
 
-	// Display extra info for Automatticians (who can handle labels and who created the PR without a fork).
-	if ( statusChecks.isFromContributor ) {
-		comment += `
 
-Once your PR is ready for review, check one last time that all required checks (other than "Required review") appearing at the bottom of this PR are passing or skipped.
-Then, add the "[Status] Needs Team review" label and ask someone from your team review the code.
-Once you’ve done so, switch to the "[Status] Needs Review" label; someone from Jetpack Crew will then review this PR and merge it to be included in the next Jetpack release.`;
-	}
 
 	// Gather info about the next release for that plugin.
 	const milestoneInfo = await buildMilestoneInfo( octokit, ownerLogin, repo, number );
@@ -21789,10 +21775,10 @@ Once you’ve done so, switch to the "[Status] Needs Review" label; someone from
 	// Look for an existing check-description task comment.
 	await postComment( payload, octokit, comment );
 
-	// If some of our checks are failing, remove any "Needs Review" labels and add an Needs Author Reply label.
+	/*// If some of our checks are failing, remove any "Needs Review" labels and add an Needs Author Reply label.
 	if ( comment.includes( ':red_circle:' ) ) {
 		await updateLabels( payload, octokit );
-	}
+	}*/
 }
 
 module.exports = checkDescription;
@@ -22731,6 +22717,7 @@ const automations = [
 ];
 
 ( async function main() {
+	debug( 'testing' );
 	const token = getInput( 'github_token' );
 	if ( ! token ) {
 		setFailed( 'main: Input `github_token` is required' );
